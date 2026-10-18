@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
 from .extensions import db, migrate, jwt
@@ -19,6 +19,7 @@ def create_app(config_class=Config):
     from .routes.admin import admin_bp
     from .routes.patient import patient_bp
     from .routes.doctor import doctor_bp
+    from .routes.records import records_bp
     from .routes.demo_roles import roles_demo_bp
     from .cli import register_cli
 
@@ -27,7 +28,13 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
     app.register_blueprint(patient_bp, url_prefix="/api/v1/patient")
     app.register_blueprint(doctor_bp, url_prefix="/api/v1/doctor")
+    app.register_blueprint(records_bp, url_prefix="/api/v1/records")
     app.register_blueprint(roles_demo_bp, url_prefix="/api/v1/demo")
     register_cli(app)
+
+    @app.errorhandler(413)
+    def too_large(_err):
+        limit_mb = app.config["MAX_CONTENT_LENGTH"] / (1024 * 1024)
+        return jsonify(error=f"File too large. Maximum size is {limit_mb:g} MB."), 413
 
     return app

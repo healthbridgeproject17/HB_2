@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, FileText, Loader2, Stethoscope } from "lucide-react";
+import { Check, Copy, Loader2, Stethoscope } from "lucide-react";
 import { Alert, PageTitle, Spinner } from "../../components/ui.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import RecordsSection from "../../components/RecordsSection.jsx";
 import api, { errorMessage } from "../../api/client.js";
 
 export default function PatientDashboard() {
@@ -124,15 +125,7 @@ export default function PatientDashboard() {
         </div>
       </div>
 
-      <div className="card mt-6">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-teal-600" />
-          <h2 className="font-medium text-slate-900">Medical records</h2>
-        </div>
-        <p className="mt-2 text-sm text-slate-500">
-          Report upload and AI-assisted analysis arrive in the next phases.
-        </p>
-      </div>
+      <RecordsSection />
     </>
   );
 }

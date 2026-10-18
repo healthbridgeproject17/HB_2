@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { UserRound, Users } from "lucide-react";
 import { Alert, PageTitle, Spinner } from "../../components/ui.jsx";
+import RecordList from "../../components/RecordList.jsx";
 import api, { errorMessage } from "../../api/client.js";
 
 export default function DoctorDashboard() {
@@ -11,6 +12,8 @@ export default function DoctorDashboard() {
   const [detail, setDetail] = useState(null);
   const [detailError, setDetailError] = useState("");
   const [detailLoading, setDetailLoading] = useState(false);
+  const [records, setRecords] = useState([]);
+  const [recordsError, setRecordsError] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -32,10 +35,18 @@ export default function DoctorDashboard() {
     setSelected(patientId);
     setDetail(null);
     setDetailError("");
+    setRecords([]);
+    setRecordsError("");
     setDetailLoading(true);
     try {
       const res = await api.get(`/doctor/patients/${patientId}`);
       setDetail(res.data.patient);
+      try {
+        const recs = await api.get(`/doctor/patients/${patientId}/records`);
+        setRecords(recs.data.records);
+      } catch (err) {
+        setRecordsError(errorMessage(err));
+      }
     } catch (err) {
       setDetailError(errorMessage(err));
     } finally {
@@ -101,8 +112,23 @@ export default function DoctorDashboard() {
               </dl>
             ) : null}
           </div>
+          {detail && (
+            <div className="mt-8">
+              <h3 className="mb-3 text-sm font-medium text-slate-900">Uploaded reports</h3>
+              <Alert>{recordsError}</Alert>
+              {!recordsError && (
+                <RecordList
+                  records={records}
+                  loadDetail={async (id) =>
+                    (await api.get(`/doctor/patients/${selected}/records/${id}`)).data.record
+                  }
+                  fileUrl={(id) => `/doctor/patients/${selected}/records/${id}/file`}
+                />
+              )}
+            </div>
+          )}
           <p className="mt-6 text-xs text-slate-400">
-            Reports, AI summaries and clinical records will appear here in later phases.
+            AI summaries and clinical records will appear here in later phases.
           </p>
         </div>
       </div>

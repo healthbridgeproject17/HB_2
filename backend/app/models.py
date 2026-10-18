@@ -39,6 +39,7 @@ class Patient(db.Model):
     user = db.relationship("User", back_populates="patient")
     health_id = db.relationship("HealthId", back_populates="patient", uselist=False)
     grants = db.relationship("PatientAccessGrant", back_populates="patient")
+    records = db.relationship("MedicalRecord", back_populates="patient")
 
 
 class HealthId(db.Model):
@@ -90,3 +91,24 @@ class AuditLog(db.Model):
     detail = db.Column(db.String(255))
     ip_address = db.Column(db.String(45))
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, index=True)
+
+
+class MedicalRecord(db.Model):
+    """An uploaded report (PDF) plus the text extracted from it.
+    Uploading never creates diagnoses, prescriptions or lab values by itself."""
+    __tablename__ = "medical_records"
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False, index=True)
+    title = db.Column(db.String(150), nullable=False)
+    category = db.Column(db.String(30), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    stored_filename = db.Column(db.String(64), unique=True, nullable=False)  # generated, never user-supplied
+    file_size = db.Column(db.Integer, nullable=False)
+    sha256 = db.Column(db.String(64), nullable=False)
+    page_count = db.Column(db.Integer)
+    extracted_text = db.Column(db.Text)
+    processing_status = db.Column(db.String(20), nullable=False)  # processed | no_text
+    processing_message = db.Column(db.String(255))
+    uploaded_at = db.Column(db.DateTime(timezone=True), default=utcnow, index=True)
+
+    patient = db.relationship("Patient", back_populates="records")
