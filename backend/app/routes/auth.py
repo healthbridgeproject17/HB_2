@@ -81,3 +81,21 @@ def me():
     if user is None or not user.is_active_account:
         return jsonify(error="Account unavailable"), 401
     return jsonify(user=serialize_user(user))
+
+
+@auth_bp.post("/change-password")
+@jwt_required()
+def change_password():
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+    current = data.get("current_password") or ""
+    new = data.get("new_password") or ""
+    if not user.check_password(current):
+        return jsonify(error="Current password is incorrect"), 401
+    if len(new) < 8:
+        return jsonify(error="New password must be at least 8 characters"), 400
+    if new == current:
+        return jsonify(error="New password must differ from the current one"), 400
+    user.set_password(new)
+    db.session.commit()
+    return jsonify(message="Password changed")

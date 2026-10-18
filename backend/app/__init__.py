@@ -16,10 +16,18 @@ def create_app(config_class=Config):
     from . import models  # noqa: F401  (so migrations see the tables)
     from .routes.health import health_bp
     from .routes.auth import auth_bp
+    from .routes.admin import admin_bp
+    from .routes.patient import patient_bp
+    from .routes.doctor import doctor_bp
     from .routes.demo_roles import roles_demo_bp
+    from .cli import register_cli
 
     app.register_blueprint(health_bp, url_prefix="/api/v1")
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
+    app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
+    app.register_blueprint(patient_bp, url_prefix="/api/v1/patient")
+    app.register_blueprint(doctor_bp, url_prefix="/api/v1/doctor")
     app.register_blueprint(roles_demo_bp, url_prefix="/api/v1/demo")
+    register_cli(app)
 
     return app
