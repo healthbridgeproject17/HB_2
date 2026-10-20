@@ -6,7 +6,7 @@ import RecordList, { CATEGORY_LABELS } from "./RecordList.jsx";
 
 const MAX_MB = 10;
 
-export default function RecordsSection() {
+export default function RecordsSection({ onChange }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
@@ -74,6 +74,7 @@ export default function RecordsSection() {
       setFile(null);
       if (fileInput.current) fileInput.current.value = "";
       await load();
+      onChange?.();
     } catch (err) {
       setFormError(errorMessage(err));
     } finally {
@@ -84,6 +85,7 @@ export default function RecordsSection() {
   const remove = async (id) => {
     await api.delete(`/records/${id}`);
     await load();
+    onChange?.();
   };
 
   return (

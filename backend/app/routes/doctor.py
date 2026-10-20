@@ -1,7 +1,8 @@
 import os
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, jsonify, request, send_file
 from ..extensions import db
-from ..models import MedicalRecord, Patient, PatientAccessGrant
+from ..models import MedicalRecord, Patient, PatientAccessGrant, Visit
+from ..utils.profile import serialize_visit, validate_visit
 from ..utils.records import record_path, serialize_record
 from ..utils.auth import roles_required, current_user
 from ..utils.audit import log_event
@@ -108,3 +109,35 @@ def patient_record_file(patient_id, record_id):
     resp = send_file(path, mimetype="application/pdf", download_name=rec.original_filename)
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
+
+
+@doctor_bp.get("/patients/<int:patient_id>/visits")
+@roles_required("doctor")
+def patient_visits(patient_id):
+    err = _require_grant(current_user(), patient_id)
+    if err:
+        return err
+    visits = (Visit.query.filter_by(patient_id=patient_id)
+              .order_by(Visit.visit_date.desc(), Visit.id.desc()).all())
+    return jsonify(visits=[serialize_visit(v) for v in visits])
+
+
+@doctor_bp.post("/patients/<int:patient_id>/visits")
+@roles_required("doctor")
+def record_visit(patient_id):
+    user = current_user()
+    err = _require_grant(user, patient_id)
+    if err:
+        return err
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(error="Send the visit details as JSON"), 400
+    clean, error = validate_visit(data)
+    if error:
+        return jsonify(error=error), 400
+
+    visit = Visit(patient_id=patient_id, doctor_id=user.doctor.id, **clean)
+    db.session.add(visit)
+    db.session.commit()
+    log_event("visit_recorded", user.id, "patient", patient_id)
+    return jsonify(visit=serialize_visit(visit)), 201

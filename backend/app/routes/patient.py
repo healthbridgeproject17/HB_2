@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from ..extensions import db
-from ..models import Doctor, PatientAccessGrant, utcnow
+from ..models import Doctor, PatientAccessGrant, Visit, utcnow
+from ..utils.profile import patient_summary, serialize_profile, serialize_visit, validate_profile_update
 from ..utils.auth import roles_required, current_user
 from ..utils.audit import log_event
 
@@ -77,3 +78,44 @@ def revoke_access(doctor_id):
     db.session.commit()
     log_event("access_revoked", user.id, "doctor", doctor_id)
     return jsonify(message="Access revoked")
+
+
+@patient_bp.get("/profile")
+@roles_required("patient")
+def get_profile():
+    return jsonify(profile=serialize_profile(current_user().patient))
+
+
+@patient_bp.patch("/profile")
+@roles_required("patient")
+def update_profile():
+    user = current_user()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(error="Send the fields to change as JSON"), 400
+
+    clean, error = validate_profile_update(data)
+    if error:
+        return jsonify(error=error), 400
+
+    patient = user.patient
+    for field, value in clean.items():
+        setattr(patient, field, value)
+    db.session.commit()
+    # Audit stores which fields changed, never their values.
+    log_event("profile_updated", user.id, "patient", patient.id, ", ".join(sorted(clean)) or None)
+    return jsonify(profile=serialize_profile(patient))
+
+
+@patient_bp.get("/summary")
+@roles_required("patient")
+def my_summary():
+    return jsonify(summary=patient_summary(current_user().patient.id))
+
+
+@patient_bp.get("/visits")
+@roles_required("patient")
+def my_visits():
+    visits = (Visit.query.filter_by(patient_id=current_user().patient.id)
+              .order_by(Visit.visit_date.desc(), Visit.id.desc()).all())
+    return jsonify(visits=[serialize_visit(v) for v in visits])

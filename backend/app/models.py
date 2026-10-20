@@ -34,12 +34,18 @@ class Patient(db.Model):
     full_name = db.Column(db.String(150), nullable=False)
     phone = db.Column(db.String(30))
     date_of_birth = db.Column(db.Date)
+    gender = db.Column(db.String(20))
+    blood_group = db.Column(db.String(3))
+    address = db.Column(db.String(300))
+    emergency_contact_name = db.Column(db.String(150))
+    emergency_contact_phone = db.Column(db.String(30))
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
     user = db.relationship("User", back_populates="patient")
     health_id = db.relationship("HealthId", back_populates="patient", uselist=False)
     grants = db.relationship("PatientAccessGrant", back_populates="patient")
     records = db.relationship("MedicalRecord", back_populates="patient")
+    visits = db.relationship("Visit", back_populates="patient")
 
 
 class HealthId(db.Model):
@@ -62,6 +68,7 @@ class Doctor(db.Model):
 
     user = db.relationship("User", back_populates="doctor")
     grants = db.relationship("PatientAccessGrant", back_populates="doctor")
+    visits = db.relationship("Visit", back_populates="doctor")
 
 
 class PatientAccessGrant(db.Model):
@@ -112,3 +119,18 @@ class MedicalRecord(db.Model):
     uploaded_at = db.Column(db.DateTime(timezone=True), default=utcnow, index=True)
 
     patient = db.relationship("Patient", back_populates="records")
+
+
+class Visit(db.Model):
+    """A hospital visit recorded by a doctor who has an active access grant for the patient."""
+    __tablename__ = "visits"
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False, index=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey("doctors.id"), nullable=False, index=True)
+    visit_date = db.Column(db.Date, nullable=False, index=True)
+    reason = db.Column(db.String(200), nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow)
+
+    patient = db.relationship("Patient", back_populates="visits")
+    doctor = db.relationship("Doctor", back_populates="visits")

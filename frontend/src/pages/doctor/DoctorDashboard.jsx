@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { UserRound, Users } from "lucide-react";
 import { Alert, PageTitle, Spinner } from "../../components/ui.jsx";
 import RecordList from "../../components/RecordList.jsx";
+import VisitSection from "../../components/VisitSection.jsx";
 import api, { errorMessage } from "../../api/client.js";
 
 export default function DoctorDashboard() {
@@ -127,6 +128,7 @@ export default function DoctorDashboard() {
               )}
             </div>
           )}
+          {detail && <VisitSection patientId={selected} />}
           <p className="mt-6 text-xs text-slate-400">
             AI summaries and clinical records will appear here in later phases.
           </p>

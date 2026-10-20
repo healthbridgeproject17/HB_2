@@ -90,6 +90,8 @@ export function AuthProvider({ children }) {
     return u;
   };
 
+  const updateUser = (changes) => setUser((u) => (u ? { ...u, ...changes } : u));
+
   const register = async (payload) => {
     await api.post("/auth/register", payload);
     return login(payload.email, payload.password, "patient");
@@ -97,7 +99,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, loadError, login, register, logout, reload: loadProfile }}
+      value={{ user, loading, loadError, login, register, logout, updateUser, reload: loadProfile }}
     >
       {children}
     </AuthContext.Provider>

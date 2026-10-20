@@ -3,6 +3,9 @@ import { Check, Copy, Loader2, Stethoscope } from "lucide-react";
 import { Alert, PageTitle, Spinner } from "../../components/ui.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import RecordsSection from "../../components/RecordsSection.jsx";
+import SummaryCards from "../../components/SummaryCards.jsx";
+import ProfileCard from "../../components/ProfileCard.jsx";
+import VisitHistory from "../../components/VisitHistory.jsx";
 import api, { errorMessage } from "../../api/client.js";
 
 export default function PatientDashboard() {
@@ -13,6 +16,7 @@ export default function PatientDashboard() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const load = useCallback(async () => {
     setError("");
@@ -125,7 +129,14 @@ export default function PatientDashboard() {
         </div>
       </div>
 
-      <RecordsSection />
+      <div className="mt-6"><SummaryCards refreshKey={refreshKey} /></div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <ProfileCard />
+        <VisitHistory />
+      </div>
+
+      <RecordsSection onChange={() => setRefreshKey((k) => k + 1)} />
     </>
   );
 }
